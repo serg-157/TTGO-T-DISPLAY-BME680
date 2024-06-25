@@ -57,4 +57,7 @@ Ring meters showing board voltage and percentage of battery charge remaining:
 
 ## Example of alcohol vapour detection
 
+<iframe src="https://player.vimeo.com/video/965910353?h=3a1011642f" width="640" height="969" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+<p><a href="https://vimeo.com/965910353">TTGO T-Display & BME680 sensor: alcohol vapors detection</a> from <a href="https://vimeo.com/user23121110">Sergey Dushkin</a> on <a href="https://vimeo.com">Vimeo</a>.</p>
+
 [![Alcohol-detection](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/alcohol.jpg)](https://vimeo.com/965910353)
