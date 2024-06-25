@@ -33,7 +33,7 @@ The sensor readings are displayed on five separate pages with the button togglin
 ### Page 1: Temperarure and humidity
 
 Ring meters showing temperature in degrees Celsius and relative humidity:
-![Screen-1](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen1.jpg)
+<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen1.jpg" width="400"/>
 
 ### Page 2: Air quality
 
@@ -55,6 +55,6 @@ Ring meter showing dew point in degrees Celsius
 Ring meters showing board voltage and percentage of battery charge remaining:
 ![Screen-5](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen5.jpg)
 
-## Detection of alcohol vapour in the air by the sensor
+## Example of alcohol vapour detection
 
-[![Alcohol-detection](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/front.jpg)](https://vimeo.com/965910353)
+[![Alcohol-detection](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/alcohol.jpg)](https://vimeo.com/965910353)
