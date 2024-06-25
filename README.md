@@ -24,9 +24,9 @@ A portable, battery-powered air quality monitor that doesn't require network acc
 
 The unit is housed in a transparent case with power and screen control buttons. The sensor is located in a separate compartment as far away from the ESP32 controller as possible and is separated by foamed plastic to minimize the effect on temperature readings.
 
-<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/front.jpg" width="600"/>
+<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/front.jpg" width="500"/>
 
-<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/back.jpg" width="600"/>
+<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/back.jpg" width="500"/>
 
 ## UI/UX
 
@@ -36,35 +36,32 @@ The sensor readings are displayed on five separate pages with the button togglin
 
 Ring meters showing temperature in degrees Celsius and relative humidity:
 
-<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen1.jpg" width="450"/>
+<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen1.jpg" width="420"/>
 
 ### Page 2: Air quality
 
 Ring meters showing CO2 and breath VOC equivalents in ppm:
 
-<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen2.jpg" width="450"/>
+<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen2.jpg" width="420"/>
 
 ### Page 3: Atmospheric pressure history
 
 Graph showing the atmospheric pressure trend over the last few hours and the current pressure value in millimetres of mercury:
 
-<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen3.jpg" width="450"/>
+<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen3.jpg" width="420"/>
 
 ### Page 4: Dew point
 
 Ring meter showing dew point in degrees Celsius
-<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen4.jpg" width="450"/>
+
+<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen4.jpg" width="420"/>
 
 ### Page 5: Battery status
 
 Ring meters showing board voltage and percentage of battery charge remaining:
 
-<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen5.jpg" width="450"/>
+<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen5.jpg" width="420"/>
 
 ## Example of alcohol vapour detection
-
-
-<iframe title="vimeo-player" src="https://player.vimeo.com/video/965910353?h=3a1011642f" width="640" height="360" frameborder="0"    allowfullscreen></iframe>
-
 
 [![Alcohol-detection](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/alcohol.jpg)](https://player.vimeo.com/video/965910353)
