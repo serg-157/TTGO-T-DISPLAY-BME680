@@ -717,7 +717,7 @@ void setup()
   initIaqSensor();
   checkIaqSensorStatus();
 
-  // Button press read amd battery status xTtask
+  // Button press read and battery status xTtask
   xTaskCreate(readButtonPressAndShowBatteryIndicator, "readButtonPressAndShowBatteryIndicator", 8192, NULL, tskIDLE_PRIORITY, NULL);
 }
 

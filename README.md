@@ -16,6 +16,16 @@ A portable, battery-powered air quality monitor that doesn't require network acc
 - [BME680 BSEC Library](https://github.com/BoschSensortec/BSEC-Arduino-library)
 - [Battery 18650 Stats Library](https://github.com/danilopinotti/Battery18650Stats)
 
+## Source code
+
+- VS Code PlatformIO plugin is used: platformoi.ini
+- The sensor manufacturer's BSEC library was used instead of the simpler and more popular Adafruit library to access additional readout parameters
+- To fully utilise the ESP32's dual core CPU, [FreeRTOS multitasking](https://www.freertos.org/implementation/a00004.html) is used to update the display in a separate task.
+  
+  ```ino
+  xTaskCreate(readButtonPressAndShowBatteryIndicator, "readButtonPressAndShowBatteryIndicator", 8192, NULL, tskIDLE_PRIORITY, NULL);
+  ```
+
 ## Pinouts and wiring
 
 ![Wiring](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/schematics.jpg)
@@ -46,7 +56,7 @@ Ring meters showing CO2 and breath VOC equivalents in ppm:
 
 ### Page 3: Atmospheric pressure history
 
-Graph showing the atmospheric pressure trend over the last few hours and the current pressure value in millimetres of mercury:
+Graph showing the atmospheric pressure trend over the last few hours and the current pressure in mm of mercury:
 
 <img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen3.jpg" width="390"/>
 
