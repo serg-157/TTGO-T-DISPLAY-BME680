@@ -20,18 +20,17 @@ TFT_eSPI tft = TFT_eSPI();
 // "Next Page" button pin
 #define BUTTON_PIN 25       // GPIO pin connected to button
 int buttonLastState = HIGH; // The previous state from the input pin
+bool buttonWasPressedAndThenReleased = false;
 int pageNumber = 1;
-bool buttonHasBeenPressed = false;
+int drawnPageNumber = 0;
 
 // BME680 sensor
 Bsec iaq;
+bool newDataReceived = false;
 String sensorStatus = "";
 #define TEMPERATURE_COMPENSATION -1.3
-String statusLastSeen = "";
+String statusLastPrinted = "";
 uint8_t accuracyLastSeen = -1;
-
-// BME680 sensor helper function
-void checkIaqSensorStatus(void);
 
 // Pressure measurement history
 #define PRESSURE_POINTS 240
@@ -58,7 +57,8 @@ int pressureValuesPrinted = 0;
 // Battery pin and voltage params
 #define ADC_PIN 34
 #define MIN_USB_VOL 4.72
-int batteryLevelLastSeen = 0;
+int batteryLevel = 0;
+int drawnBatteryLevel = -1;
 
 // Ring meter color schemes
 #define RED2RED 0
@@ -89,6 +89,35 @@ void initPinout()
   pinMode(BUTTON_PIN, INPUT_PULLUP); // config GPIO as input pin and enable the internal pull-up resistor
 }
 
+// >>> Display initialization
+void initDisplay()
+{
+  tft.begin();
+  tft.setRotation(1);
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+  tft.fillScreen(TFT_BLACK);
+  tft.setSwapBytes(true);
+  tft.setTextFont(4);
+  
+  drawnPageNumber = 0;
+  drawnBatteryLevel = -1;
+  statusLastPrinted = "";
+
+  if (CONSOLE_OUTPUT) Serial.println("Display initialized");
+}
+
+// >>> process "Next page" button press
+void processButtonPress()
+{
+  // Read the state of the switch/button
+  int buttonCurrentState = digitalRead(BUTTON_PIN);
+
+  if (buttonCurrentState == HIGH && buttonLastState == LOW)
+    buttonWasPressedAndThenReleased = true;
+
+  buttonLastState = buttonCurrentState;
+}
+
 // >>> BME680 sensor initialization
 void initIaqSensor(void)
 {
@@ -114,6 +143,16 @@ void initIaqSensor(void)
   iaq.updateSubscription(sensorList, 13, BSEC_SAMPLE_RATE_LP);
 }
 
+// >>> Print out sensor error message
+void drawSensorErrorScreen(void)
+{
+  tft.fillScreen(TFT_BLACK);
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+  tft.setTextDatum(TL_DATUM);
+  tft.drawString("Sensor error -", 20, 20, 4);
+  tft.drawString("check wiring!", 20, 45, 4);
+}
+
 // >>> BME680 sensor status check
 void checkIaqSensorStatus(void)
 {
@@ -127,15 +166,20 @@ void checkIaqSensorStatus(void)
   {
     if (iaq.bsecStatus < BSEC_OK)
     {
-      for (int i = 1; i <= 5; i++) // trying to reinitialize the sensor
+      for (int i = 1; i <= 10; i++) // trying to reinitialize the sensor
       {
         initIaqSensor();
         if (iaq.bsecStatus >= BSEC_OK) break;
+        delay(200);
       }
       if (iaq.bsecStatus < BSEC_OK)
       {
         sensorStatus = "BSEC error " + String(iaq.bsecStatus);
-        for (;;) ; // Halt in case of failure
+        for (;;) // Print out error message and halt
+        {
+          drawSensorErrorScreen();
+          delay(400);
+        }
       }
     }
     else
@@ -148,15 +192,20 @@ void checkIaqSensorStatus(void)
   {
     if (iaq.bme68xStatus < BME68X_OK)
     {
-      for (int i = 1; i <= 5; i++) // trying to reinitialize the sensor
+      for (int i = 1; i <= 10; i++) // trying to reinitialize the sensor
       {
         initIaqSensor();
         if (iaq.bsecStatus >= BME68X_OK) break;
+        delay(200);
       }
       if (iaq.bme68xStatus < BME68X_OK)
       {
         sensorStatus = "BME680 error " + String(iaq.bme68xStatus);
-        for (;;) ; // Halt in case of failure
+        for (;;) // Print out error message and halt
+        {
+          drawSensorErrorScreen();
+          delay(400);
+        }
       }
     }
     else
@@ -520,7 +569,7 @@ void drawAccuracyIndicator(int accuracy)
     tft.fillRect(spacing, spacing + (blockHeight + spacing + 1) * 3, blockWidth, blockHeight, TFT_SILVER);
 }
 
-// Status line
+// Draw status line
 void drawStatusLine()
 {
   uint16_t color = TFT_WHITE;
@@ -592,7 +641,7 @@ void drawStatusLine()
     }
   }
 
-  if (!status.equals(statusLastSeen) && !status.isEmpty())
+  if (!status.equals(statusLastPrinted) && !status.isEmpty())
   {
     int textShift = 6;
     tft.setTextSize(1);
@@ -601,7 +650,7 @@ void drawStatusLine()
     tft.setTextColor(color, TFT_BLACK);
     tft.setTextDatum(TL_DATUM);
     tft.drawString(status, ACCURACY_BOX_WIDTH + textShift, 0, 4);
-    statusLastSeen = status;
+    statusLastPrinted = status;
   }
 }
 
@@ -617,8 +666,31 @@ void printBatteryInfo()
 }
 
 // >>> Draw battery indicator
-void drawBatteryIndicator(int chargeLevel)
+void drawBatteryIndicator()
 {
+
+  if (abs(batteryLevel - drawnBatteryLevel) <= 2) return;
+
+  if (CONSOLE_OUTPUT) printBatteryInfo();
+
+  int chargeLevelCode = 0;
+  if (batteryLevel >= 80)
+  {
+    chargeLevelCode = 3;
+  }
+  else if (batteryLevel < 80 && batteryLevel >= 50)
+  {
+    chargeLevelCode = 2;
+  }
+  else if (batteryLevel < 50 && batteryLevel >= 20)
+  {
+    chargeLevelCode = 1;
+  }
+  else if (batteryLevel < 20)
+  {
+    chargeLevelCode = 0;
+  }
+
   int32_t spacing = 2;
   int32_t edgeSpacing = spacing + 1;
   int32_t blockWidth = ((ICON_WIDTH - edgeSpacing * 2) / 4) - 2;
@@ -626,7 +698,7 @@ void drawBatteryIndicator(int chargeLevel)
 
   tft.fillRect(ICON_POS_X, 0, ICON_WIDTH, ICON_HEIGHT, TFT_DARK_GRAY);
 
-  switch (chargeLevel)
+  switch (chargeLevelCode)
   {
     case 0: // < 20%
       tft.fillRect(ICON_POS_X + edgeSpacing, edgeSpacing, blockWidth, blockHeight, TFT_RED);
@@ -649,59 +721,73 @@ void drawBatteryIndicator(int chargeLevel)
     default:
       break;
   }
+
+  drawnBatteryLevel = batteryLevel;
 }
 
-// >>> Read button press and display battery info: will be executed as an xTask job
-void readButtonPressAndShowBatteryIndicator(void *arg)
+// >>> Draw meters
+void drawMeters()
+{
+  if (!newDataReceived && pageNumber == drawnPageNumber) return; // nothing to draw
+
+  // Clear meters area
+  if (pageNumber != drawnPageNumber)
+    tft.fillRect(0, RING_AREA_START_Y, 240, 135 - RING_AREA_START_Y, TFT_BLACK);
+  
+  int xpos;
+  int ringRadiusLarge = 82;
+  switch (pageNumber)
+  {
+    case 1: // Temperature (corrected) and Humidity page
+      xpos = 0;
+      xpos = RING_GAP + ringMeter(iaq.temperature + TEMPERATURE_COMPENSATION, -10, 40, xpos, RING_AREA_START_Y, RING_RADIUS, "Temp *C", BLUE2RED, 1, 300);
+      xpos = RING_GAP + ringMeter(iaq.humidity, 15, 90, xpos, RING_AREA_START_Y, RING_RADIUS, "Hum %", RED2GREEN, 1, 300);
+      break;
+    case 2: // CO2 & VOC page
+      xpos = 0;
+      xpos = RING_GAP + ringMeter((int)iaq.co2Equivalent, 300, 1400, xpos, RING_AREA_START_Y, RING_RADIUS, "CO2 ppm", GREEN2RED, 0, 300);
+      xpos = RING_GAP + ringMeter(iaq.breathVocEquivalent, 0, 1.5, xpos, RING_AREA_START_Y, RING_RADIUS, "VOC ppm", GREEN2RED, 1, 300);
+      break;
+    case 3: // Pressure page
+      drawPressureGraph(pressureLastSeen);
+      break;
+    case 4: // DewPoint page
+      xpos = (tft.width() / 2) - ringRadiusLarge;
+      xpos = RING_GAP + ringMeter(calculateDewPoint(iaq.temperature, iaq.humidity), -10, (int)iaq.temperature, xpos, RING_AREA_START_Y + 1, ringRadiusLarge, "Dew Point", GREEN2RED, 1, 194);
+      break;
+    case 5: // Battery page
+      xpos = 0;
+      xpos = RING_GAP + ringMeter((float)battery.getBatteryVolts(), 0, 6, xpos, RING_AREA_START_Y, RING_RADIUS, "Volt", BLUE2BLUE, 2, 300);
+      xpos = RING_GAP + ringMeter((int)battery.getBatteryChargeLevel(), 0, 100, xpos, RING_AREA_START_Y, RING_RADIUS, "%", RED2GREEN, 0, 300);
+      break;
+    default:
+      break;
+  }
+
+  drawnPageNumber = pageNumber;
+  newDataReceived = false;
+}
+
+// >>>  Screen output task: will be executed as an xTask job
+void drawTheScreen(void *arg)
 {
   while (1)
   {
-    // Read the state of the "Next Page" button
-    if (digitalRead(BUTTON_PIN) == LOW) buttonHasBeenPressed = true;
-
-    // Read the battery charge level
-    int batteryLevel = battery.getBatteryChargeLevel();
-
-    if (abs(batteryLevel - batteryLevelLastSeen) > 2)
+    processButtonPress();
+    if (buttonWasPressedAndThenReleased)
     {
-      if (CONSOLE_OUTPUT)
-        printBatteryInfo();
-
-      int chargeLevelCode = 0;
-      if (batteryLevel >= 80)
-      {
-        chargeLevelCode = 3;
-      }
-      else if (batteryLevel < 80 && batteryLevel >= 50)
-      {
-        chargeLevelCode = 2;
-      }
-      else if (batteryLevel < 50 && batteryLevel >= 20)
-      {
-        chargeLevelCode = 1;
-      }
-      else if (batteryLevel < 20)
-      {
-        chargeLevelCode = 0;
-      }
-      drawBatteryIndicator(chargeLevelCode);
-      batteryLevelLastSeen = batteryLevel;
+      pageNumber++;
+      if (pageNumber == 6) pageNumber = 1;
+      buttonWasPressedAndThenReleased = false;
     }
 
-    vTaskDelay(150);
-  }
-}
+    // Draw it all!
+    drawStatusLine();
+    drawBatteryIndicator();
+    drawMeters();
 
-// >>> Initializations
-void initDisplay()
-{
-  tft.begin();
-  tft.setRotation(1);
-  tft.setTextColor(TFT_WHITE, TFT_BLACK);
-  tft.fillScreen(TFT_BLACK);
-  tft.setSwapBytes(true);
-  tft.setTextFont(4);
-  Serial.println("Display initialized");
+    vTaskDelay(100);
+  }
 }
 
 // >>> Setup
@@ -717,36 +803,27 @@ void setup()
   initIaqSensor();
   checkIaqSensorStatus();
 
-  // Button press read and battery status xTtask
-  xTaskCreate(readButtonPressAndShowBatteryIndicator, "readButtonPressAndShowBatteryIndicator", 8192, NULL, tskIDLE_PRIORITY, NULL);
+  // Draw screen xTtask
+  xTaskCreate(drawTheScreen, "drawTheScreen", 8192, NULL, tskIDLE_PRIORITY, NULL);
 }
 
 // >>> Loop
 void loop()
 {
   unsigned long timeTrigger = millis();
-  int ringRadiusLarge = 82;
-
-
 
   if (iaq.run()) // New sensor data is available
   {
 
     sensorStatus = "OK";
 
-    if (buttonHasBeenPressed)
-    {
-      pageNumber++;
-      if (pageNumber == 6) pageNumber = 1;
-      // Clear meters area
-      tft.fillRect(0, RING_AREA_START_Y, 240, 135 - RING_AREA_START_Y, TFT_BLACK);
-      buttonHasBeenPressed = false;
-    }
+    // Read the battery charge level
+    batteryLevel = battery.getBatteryChargeLevel();
 
     // Sensor data console output
     if (CONSOLE_OUTPUT) printSensorData(timeTrigger);
 
-    // Processing pressure
+    // Reading and processing pressure
     float currentPressure = iaq.pressure / 100.0 * 0.75006;
     if (fabs(pressureLastSeen - currentPressure) > 0.03)
     {
@@ -754,39 +831,8 @@ void loop()
       pressureLastSeen = currentPressure;
     }
 
-    // Draw meters
-    int xpos;
+    newDataReceived = true;
 
-    switch (pageNumber)
-    {
-    case 1: // Temperature (corrected) and Humidity page
-      xpos = 0;
-      xpos = RING_GAP + ringMeter(iaq.temperature + TEMPERATURE_COMPENSATION, -10, 40, xpos, RING_AREA_START_Y, RING_RADIUS, "Temp *C", BLUE2RED, 1, 300);
-      xpos = RING_GAP + ringMeter(iaq.humidity, 15, 90, xpos, RING_AREA_START_Y, RING_RADIUS, "Hum %", RED2GREEN, 1, 300);
-      break;
-    case 2: // CO2 & VOC page
-      xpos = 0;
-      xpos = RING_GAP + ringMeter((int)iaq.co2Equivalent, 300, 1400, xpos, RING_AREA_START_Y, RING_RADIUS, "CO2 ppm", GREEN2RED, 0, 300);
-      xpos = RING_GAP + ringMeter(iaq.breathVocEquivalent, 0, 1.5, xpos, RING_AREA_START_Y, RING_RADIUS, "VOC ppm", GREEN2RED, 2, 300);
-      break;
-    case 3: // Pressure page
-      drawPressureGraph(currentPressure);
-      break;
-    case 4: // DewPoint page
-      xpos = (tft.width() / 2) - ringRadiusLarge;
-      xpos = RING_GAP + ringMeter(calculateDewPoint(iaq.temperature, iaq.humidity), -10, (int)iaq.temperature, xpos, RING_AREA_START_Y + 1, ringRadiusLarge, "Dew Point", GREEN2RED, 1, 194);
-      break;
-    case 5: // Battery page
-      xpos = 0;
-      xpos = RING_GAP + ringMeter((float)battery.getBatteryVolts(), 0, 6, xpos, RING_AREA_START_Y, RING_RADIUS, "Volt", BLUE2BLUE, 2, 300);
-      xpos = RING_GAP + ringMeter((int)battery.getBatteryChargeLevel(), 0, 100, xpos, RING_AREA_START_Y, RING_RADIUS, "%", RED2GREEN, 0, 300);
-      break;
-    default:
-      break;
-    }
-
-    // Draw status line
-    drawStatusLine();
   }
   else
   {
@@ -798,5 +844,5 @@ void loop()
     }
   }
 
-  delay(150);
+  delay(100);
 }

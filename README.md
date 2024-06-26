@@ -19,16 +19,33 @@ A portable, battery-powered air quality monitor that doesn't require network acc
 ## Source code
 
 - VS Code PlatformIO plugin is used: platformoi.ini
+
 - The sensor manufacturer's BSEC library was used instead of the simpler and more popular Adafruit library to access additional readout parameters
+
 - To fully utilise the ESP32's dual core CPU, [FreeRTOS multitasking](https://www.freertos.org/implementation/a00004.html) is used to update the display in a separate task.
   
   ```ino
-  xTaskCreate(readButtonPressAndShowBatteryIndicator, "readButtonPressAndShowBatteryIndicator", 8192, NULL, tskIDLE_PRIORITY, NULL);
+  void drawTheScreen(void *arg)
+  {
+    while (1)
+    {
+      processButtonPress();
+      drawStatusLine();
+      drawBatteryIndicator();
+      drawMeters();
+      vTaskDelay(100);
+    }
+  }
+  
+  xTaskCreate(drawTheScreen, "drawTheScreen", 8192, NULL, tskIDLE_PRIORITY, NULL);
+  
+  
   ```
 
 ## Pinouts and wiring
 
 ![Wiring](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/schematics.jpg)
+![Modelling](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/modelling.jpg)
 
 ## Unit body and layout
 
