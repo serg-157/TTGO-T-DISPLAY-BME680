@@ -34,7 +34,7 @@ A portable, battery-powered air quality monitor that doesn't require network acc
 
 The unit is housed in a transparent case with power and screen control buttons. The sensor is located in a separate compartment as far away from the ESP32 controller as possible and is separated by foamed plastic to minimize the effect on temperature readings.
 
-<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/front.jpg" width="420"/><img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/back.jpg" width="420"/>
+<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/front.jpg" width="400"/><img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/back.jpg" width="400"/>
 
 ## UI/UX
 
