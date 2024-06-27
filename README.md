@@ -16,13 +16,13 @@ A portable, battery-powered air quality monitor that doesn't require network acc
 - [BME680 BSEC Library](https://github.com/BoschSensortec/BSEC-Arduino-library)
 - [Battery 18650 Stats Library](https://github.com/danilopinotti/Battery18650Stats)
 
-## Source code
+## Comments
 
-- IDE: VS Code PlatformIO, project config file [platformoi.ini](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/platformio.ini)
+- IDE: VS Code [PlatformIO](https://platformio.org/), project config file: [platformoi.ini](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/platformio.ini)
 
-- The sensor manufacturer's BSEC library was used instead of the simpler and more popular Adafruit library to access additional readout parameters
+- The sensor manufacturer's BSEC library was used instead of the simpler and more popular [Adafruit_BME680](https://github.com/adafruit/Adafruit_BME680) library to access additional available parameters
 
-- To fully utilise the ESP32's dual core CPU, [FreeRTOS multitasking](https://www.freertos.org/implementation/a00004.html) is used to update the display in a separate task.
+- To fully utilise the ESP32's dual core CPU, [FreeRTOS multitasking](https://www.freertos.org/implementation/a00004.html) is used to process the button press and update the screen in a separate task, while the main loop is used to read the sensor data.
   
   ```ino
   void drawTheScreen(void *arg)
@@ -40,9 +40,29 @@ A portable, battery-powered air quality monitor that doesn't require network acc
   xTaskCreate(drawTheScreen, "drawTheScreen", 8192, NULL, tskIDLE_PRIORITY, NULL);
   ```
 
+## Build and upload
+
+- Install VS Code and the [PlatformIO](https://platformio.org/) plugin
+- Create new project and select **ttgo-lora32-v1** board
+- Add dependencies:
+  - [TFT_eSPI Display Library](https://github.com/Bodmer/TFT_eSPI)
+  - [BME680 BSEC Library](https://github.com/BoschSensortec/BSEC-Arduino-library)
+  - [Battery 18650 Stats Library](https://github.com/danilopinotti/Battery18650Stats)
+- Set the correct target board for TFT_eSPI library by editing the contents of pio/libdeps/esp32dev/TFT_eSPI/User_Setup_Select.h file:
+  - comment out the line `#include <User_Setup.h>`
+  
+  - uncomment the line `#include <User_Setups/Setup25_TTGO_T_Display.h>` 
+- Replace the contents of the default main.cpp file with [main.cpp](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/src/main.cpp) from this repository
+- Enable the console output if required `#define CONSOLE_OUTPUT true`
+- Connect the TTGO T-Display board with battery and sensor to your computer using the USB-C data cable.
+- Compile the project and upload it to the board
+
+
+
 ## Pinouts and wiring
 
 ![Wiring](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/schematics.jpg)
+
 ## Modelling
 
 ![Modelling](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/modelling.jpg)
