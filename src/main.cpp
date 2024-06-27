@@ -11,16 +11,15 @@
 #include <bsec.h>
 #include <Battery18650Stats.h>
 
-// TFT display library Initializing
-TFT_eSPI tft = TFT_eSPI();
-
 // Console output flag
 #define CONSOLE_OUTPUT false
+
+// TFT display library Initializing
+TFT_eSPI tft = TFT_eSPI();
 
 // "Next Page" button pin
 #define BUTTON_PIN 25       // GPIO pin connected to button
 int buttonLastState = HIGH; // The previous state from the input pin
-bool buttonWasPressedAndThenReleased = false;
 int pageNumber = 1;
 int drawnPageNumber = 0;
 
@@ -36,6 +35,7 @@ uint8_t accuracyLastSeen = -1;
 #define PRESSURE_POINTS 240
 float pressure[PRESSURE_POINTS];
 int pressurePrinted[2][PRESSURE_POINTS];
+bool pressureCurveRefreshNeeded = false;
 float pressureMin = 0;
 float pressureMax = 0;
 float pressureLastSeen = 0;
@@ -57,6 +57,8 @@ int pressureValuesPrinted = 0;
 // Battery pin and voltage params
 #define ADC_PIN 34
 #define MIN_USB_VOL 4.72
+#define CONVERSION_FACTOR 1.8
+#define READS 20
 int batteryLevel = 0;
 int drawnBatteryLevel = -1;
 
@@ -75,8 +77,8 @@ int drawnBatteryLevel = -1;
 #define ACCURACY_BOX_HEIGHT RING_AREA_START_Y - 8
 #define ACCURACY_BOX_WIDTH 13
 
-// Battery library initialization and images
-Battery18650Stats battery(ADC_PIN);
+// Battery library initialization
+Battery18650Stats battery(ADC_PIN, CONVERSION_FACTOR, READS);
 
 
 
@@ -106,15 +108,18 @@ void initDisplay()
   if (CONSOLE_OUTPUT) Serial.println("Display initialized");
 }
 
-// >>> process "Next page" button press
+// >>> Process "Next page" button press
 void processButtonPress()
 {
   // Read the state of the switch/button
   int buttonCurrentState = digitalRead(BUTTON_PIN);
-
+  
   if (buttonCurrentState == HIGH && buttonLastState == LOW)
-    buttonWasPressedAndThenReleased = true;
-
+  {
+    pageNumber++;
+    if (pageNumber == 6) pageNumber = 1;
+  }
+  
   buttonLastState = buttonCurrentState;
 }
 
@@ -285,6 +290,7 @@ void addPressureValue(float value)
   pressureMin = min;
   pressureMax = max;
   pressureValues = count;
+  pressureCurveRefreshNeeded = true;
 }
 
 // >>> Return a 16 bit rainbow color
@@ -326,10 +332,13 @@ unsigned int rainbow(byte value)
   return (red << 11) + (green << 5) + blue;
 }
 
+
 // >>> Draw the meter on the screen, returns x coord of righthand side
 int ringMeter(float data, int vmin, int vmax, int x, int y, int r, const char *units, byte scheme, unsigned int decimalPlaces, int ringAngle)
 {
   int value = data;
+
+  if (data > 999) decimalPlaces = 0;
 
   int multiplier = 1;
   if (decimalPlaces > 0)
@@ -340,10 +349,9 @@ int ringMeter(float data, int vmin, int vmax, int x, int y, int r, const char *u
     vmax = vmax * multiplier;
   }
 
-  // Minimum value of r is about 52 before value text intrudes on ring, drawing the text first is an option
+  // Center of the ring: minimum value of r is about 52 before value text intrudes on ring, drawing the text first is an option
   x += r;
-  y += r; // Calculate coords of centre of ring
-
+  y += r;
   int w = r / 3; // Width of outer ring is 1/3 of radius
 
   int angle = ringAngle / 2; // Half the sweep angle of meter (300 degrees)
@@ -381,13 +389,13 @@ int ringMeter(float data, int vmin, int vmax, int x, int y, int r, const char *u
       {
       case 0:
         color = TFT_RED;
-        break; // Fixed colour
+        break; // Fixed color
       case 1:
         color = TFT_GREEN;
-        break; // Fixed colour
+        break; // Fixed color
       case 2:
         color = TFT_BLUE;
-        break; // Fixed colour
+        break; // Fixed color
       case 3:
         color = rainbow(map(i, -angle, angle, 0, 127));
         break; // Full spectrum blue to red
@@ -399,7 +407,7 @@ int ringMeter(float data, int vmin, int vmax, int x, int y, int r, const char *u
         break; // Red to green (low battery etc)
       default:
         color = TFT_BLUE;
-        break; // Fixed colour
+        break; // Fixed color
       }
       tft.fillTriangle(x0, y0, x1, y1, x2, y2, color);
       tft.fillTriangle(x1, y1, x2, y2, x3, y3, color);
@@ -416,34 +424,19 @@ int ringMeter(float data, int vmin, int vmax, int x, int y, int r, const char *u
 
   // Set the text color to default
   tft.setTextSize(1);
-  tft.setTextColor(TFT_BLACK, TFT_BLACK);
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
   tft.setTextDatum(MC_DATUM);
+  uint8_t font = (r > 84) ? 8 : 4; // Font size depending on ring radius
+  uint16_t padding = (r > 84) ? 5 * 55 : 5 * 14; // Allow for 5 digits of corresponding character width
 
-  // Print value, if the meter is large then use big font 8, othewise use 4
-  if (r > 84)
-  {
-    tft.setTextPadding(4 * 55);       // Allow for 3 digits each 55 pixels wide
-    tft.drawString("10000", x, y, 8); // Cleaning the prevous value
-    tft.setTextColor(TFT_WHITE, TFT_BLACK);
-    tft.drawString(out, x, y, 8); // Value in middle
-  }
-  else
-  {
-    tft.setTextPadding(4 * 14);       // Allow for 4 digits each 14 pixels wide
-    tft.drawString("10000", x, y, 4); // Cleaning the prevous value
-    tft.setTextColor(TFT_WHITE, TFT_BLACK);
-    tft.drawString(out, x, y, 4); // Value in middle
-  }
-  tft.setTextSize(1);
-  tft.setTextPadding(0);
+  tft.setTextPadding(padding); // Set padding
+  tft.drawString(out, x, y, font); // Print value in the middle
 
   // Print units, if the meter is large then use big font 4, othewise use 2
-  tft.setTextColor(TFT_WHITE, TFT_BLACK);
-  if (r > 84)
-    tft.drawString(units, x, y + 60, 4); // Units display
-  else
-    tft.drawString(units, x, y + 15, 2); // Units display
-
+  font = (r > 84) ? 4 : 2; // Font size for units
+  int32_t shift = (r > 84) ? 60 : 15;
+  tft.drawString(units, x, y + shift, font); // Print units
+  
   // Calculate and return right hand side next X coordinate
   return x + r;
 }
@@ -458,7 +451,7 @@ void drawPressureGraph(float value)
   tft.setTextDatum(TL_DATUM);
 
   // Erasing a previously printed curve to avoid having to clean the entire graph area and reduce flickering
-  if (pressureValuesPrinted > 0)
+  if (pressureValuesPrinted > 0 && pressureCurveRefreshNeeded)
   {
     for (int i = 0; i < pressureValues; i++)
       tft.drawPixel(pressurePrinted[0][i], pressurePrinted[1][i], TFT_BLACK); // fit in the plot area
@@ -495,7 +488,7 @@ void drawPressureGraph(float value)
   tft.drawLine(xCoord, yCoord + ySize, xSize, yCoord + ySize, TFT_WHITE);  // X axis
   tft.drawLine(xCoord, yCoord, xCoord, yCoord + ySize, TFT_WHITE); // Y axis
 
-  if (pressureValues == 0) return; // nothing to draw
+  if (pressureValues == 0 || !pressureCurveRefreshNeeded) return; // nothing to draw
 
   float pressureAvg = (pressureMin + pressureMax) / 2.0;
   float pressureDif = pressureMax - pressureMin;
@@ -538,6 +531,8 @@ void drawPressureGraph(float value)
     pressureValuesPrinted++;
     x++;
   }
+
+  pressureCurveRefreshNeeded = false;
 }
 
 // >>> Dew point calculation
@@ -732,13 +727,16 @@ void drawMeters()
 
   // Clear meters area
   if (pageNumber != drawnPageNumber)
+  {
     tft.fillRect(0, RING_AREA_START_Y, 240, 135 - RING_AREA_START_Y, TFT_BLACK);
+    pressureCurveRefreshNeeded = true;
+  }
   
   int xpos;
   int ringRadiusLarge = 82;
   switch (pageNumber)
   {
-    case 1: // Temperature (corrected) and Humidity page
+    case 1: // Temperature (compensated) and Humidity page
       xpos = 0;
       xpos = RING_GAP + ringMeter(iaq.temperature + TEMPERATURE_COMPENSATION, -10, 40, xpos, RING_AREA_START_Y, RING_RADIUS, "Temp *C", BLUE2RED, 1, 300);
       xpos = RING_GAP + ringMeter(iaq.humidity, 15, 90, xpos, RING_AREA_START_Y, RING_RADIUS, "Hum %", RED2GREEN, 1, 300);
@@ -771,22 +769,17 @@ void drawMeters()
 // >>>  Screen output task: will be executed as an xTask job
 void drawTheScreen(void *arg)
 {
-  while (1)
+  for (;;)
   {
+    // Is page change requested?
     processButtonPress();
-    if (buttonWasPressedAndThenReleased)
-    {
-      pageNumber++;
-      if (pageNumber == 6) pageNumber = 1;
-      buttonWasPressedAndThenReleased = false;
-    }
 
     // Draw it all!
     drawStatusLine();
     drawBatteryIndicator();
     drawMeters();
 
-    vTaskDelay(100);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
   }
 }
 

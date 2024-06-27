@@ -43,7 +43,6 @@ A portable, battery-powered air quality monitor that doesn't require network acc
 ## Pinouts and wiring
 
 ![Wiring](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/schematics.jpg)
-
 ## Modelling
 
 ![Modelling](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/modelling.jpg)
