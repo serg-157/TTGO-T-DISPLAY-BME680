@@ -40,7 +40,7 @@ A portable, battery-powered air quality monitor that doesn't require network acc
   xTaskCreate(drawTheScreen, "drawTheScreen", 8192, NULL, tskIDLE_PRIORITY, NULL);
   ```
 
-## Build and upload
+## Building and flashing
 
 - Install VS Code and the [PlatformIO](https://platformio.org/) plugin
 - Create new project and select **ttgo-lora32-v1** board
