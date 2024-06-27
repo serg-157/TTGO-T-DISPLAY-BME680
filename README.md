@@ -18,7 +18,7 @@ A portable, battery-powered air quality monitor that doesn't require network acc
 
 ## Source code
 
-- VS Code PlatformIO plugin is used: platformoi.ini
+- IDE: VS Code PlatformIO, project config file [platformoi.ini](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/platformio.ini)
 
 - The sensor manufacturer's BSEC library was used instead of the simpler and more popular Adafruit library to access additional readout parameters
 
@@ -38,13 +38,14 @@ A portable, battery-powered air quality monitor that doesn't require network acc
   }
   
   xTaskCreate(drawTheScreen, "drawTheScreen", 8192, NULL, tskIDLE_PRIORITY, NULL);
-  
-  
   ```
 
 ## Pinouts and wiring
 
 ![Wiring](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/schematics.jpg)
+
+## Modelling
+
 ![Modelling](https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/modelling.jpg)
 
 ## Unit body and layout
@@ -61,31 +62,31 @@ The sensor readings are displayed on five separate pages with the button togglin
 
 Ring meters showing temperature in degrees Celsius and relative humidity:
 
-<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen1.jpg" width="300"/>
+<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen1.jpg" width="280"/>
 
 ### Page 2: Air quality
 
 Ring meters showing CO2 and breath VOC equivalents in ppm:
 
-<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen2.jpg" width="300"/>
+<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen2.jpg" width="280"/>
 
 ### Page 3: Atmospheric pressure history
 
 Graph showing the atmospheric pressure trend over the last few hours and the current pressure in mm of mercury:
 
-<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen3.jpg" width="300"/>
+<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen3.jpg" width="280"/>
 
 ### Page 4: Dew point
 
 Ring meter showing dew point in degrees Celsius
 
-<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen4.jpg" width="300"/>
+<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen4.jpg" width="280"/>
 
 ### Page 5: Battery status
 
 Ring meters showing board voltage and percentage of battery charge remaining:
 
-<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen5.jpg" width="300"/>
+<img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen5.jpg" width="280"/>
 
 ## Video: alcohol vapour detection
 
