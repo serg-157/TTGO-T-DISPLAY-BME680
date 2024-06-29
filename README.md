@@ -91,7 +91,7 @@ Ring meters showing CO2 and breath VOC equivalents in ppm:
 
 ### Page 3: Atmospheric pressure history
 
-Graph showing the atmospheric pressure trend over the last few hours and the current pressure in mm of mercury:
+Graph showing the atmospheric pressure trend over the last few hours and the current pressure in mm of mercury. Time axis is not linear, it only shows the trend:
 
 <img src="https://github.com/serg-157/TTGO-T-DISPLAY-BME680/blob/main/media/screen3.jpg" width="280"/>
 
