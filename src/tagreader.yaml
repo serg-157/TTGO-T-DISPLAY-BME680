@@ -10,7 +10,7 @@ wifi:
 captive_portal:
 
 dashboard_import:
-  package_import_url: github://serg-157/TTGO-T-DISPLAY-BME680/blob/main/src/tagreader.yaml
+  package_import_url: github://serg-157/TTGO-T-DISPLAY-BME680/src/tagreader.yaml
 
 improv_serial:
 
