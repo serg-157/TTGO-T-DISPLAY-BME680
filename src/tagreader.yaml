@@ -19,6 +19,24 @@ substitutions:
   name: tagreader
   friendly_name: TagReader
 
+on_boot:
+  priority: -10
+  then:
+  - wait_until:
+      api.connected:
+  - logger.log: API is connected!
+  - rtttl.play: "success:d=24,o=5,b=100:c,g,b"
+  - light.turn_on:
+      id: activity_led
+      brightness: 100%
+      red: 0%
+      green: 0%
+      blue: 100%
+      flash_length: 500ms
+  - switch.turn_on: buzzer_enabled
+  - switch.turn_on: led_enabled
+
+
 esphome:
   name: $name
 
@@ -32,30 +50,14 @@ esp8266:
 
   # Automatically add the mac address to the name
   # so you can use a single firmware for all devices
-  name_add_mac_suffix: true
+  #name_add_mac_suffix: true
 
   # This will allow for (future) project identification,
   # configuration and updates.
-  project:
-    name: adonno.tag_reader
-    version: "1.4"
+  #project:
+    #name: adonno.tag_reader
+    #version: "1.4"
 # If buzzer is enabled, notify on api connection success
-  on_boot:
-    priority: -10
-    then:
-    - wait_until:
-        api.connected:
-    - logger.log: API is connected!
-    - rtttl.play: "success:d=24,o=5,b=100:c,g,b"
-    - light.turn_on:
-        id: activity_led
-        brightness: 100%
-        red: 0%
-        green: 0%
-        blue: 100%
-        flash_length: 500ms
-    - switch.turn_on: buzzer_enabled
-    - switch.turn_on: led_enabled
 
 # Define switches to control LED and buzzer from HA
 switch:
